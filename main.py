@@ -8,11 +8,8 @@ class Card:
 class Game:
     def __init__(self):
         self.total_cards, self.normal_cards = self.create_all_cards()
-        self.cards_of_all_players = self.setup_player_cards(2, 7)
+        self.players = self.create_players(2, 7)
         self.first_card = self.choose_first_card()
-
-    def setup(self):
-        self.create_players()
 
     def create_all_cards(self):
         #TODO: Unhardcode later
@@ -75,19 +72,21 @@ class Game:
 
         return [total_cards, normal_cards]
 
-   
-
-    def setup_players_cards(self, player_amount, cards_per_player):
-        cards_of_all_players = []
+    def create_players(self, player_amount, cards_per_player):
+        list_of_all_players = []
+        for player_number in range(player_amount):
+            list_of_all_players.append(Player(player_number, self.setup_player_cards(cards_per_player)))
         
-        for player in range(player_amount):
-            player_cards = []
-            for card in range(cards_per_player):
-                player_cards.append(self.total_cards[random.randint(0, len(self.total_cards) - 1)])
-            cards_of_all_players.append(player_cards)
+        return list_of_all_players
 
-        return cards_of_all_players
+    def setup_player_cards(self, cards_per_player):
+        player_cards = []
 
+        for card in range(cards_per_player):
+            player_cards.append(self.total_cards[random.randint(0, len(self.total_cards) - 1)])
+
+        return player_cards
+   
     def choose_first_card(self):
         #TODO: Remove +2, reverse, and skip from normal_cards
         first_card = self.normal_cards[random.randint(0, len(self.normal_cards) - 1)]
@@ -95,14 +94,19 @@ class Game:
         return first_card
 
 class Player:
-    def __init__(self, cards):
+    def __init__(self, id, cards):
+        self.id = id
         self.cards = cards
 
 game = Game()
 
-
-
 print(game.first_card.type)
+
+for player in game.players:
+    print(player.id)
+    for card in player.cards:
+        print(card.color + ": " + card.type)
+    print("\n")
 
 # for i in game.cards_of_all_players:
     # for j in i:
