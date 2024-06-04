@@ -1,3 +1,4 @@
+import os
 import random
 
 class Card:
@@ -6,10 +7,27 @@ class Card:
         self.color = color
 
 class Game:
-    def __init__(self):
+    def __init__(self, player_amount, card_amount):
         self.total_cards, self.normal_cards = self.create_all_cards()
-        self.players = self.create_players(2, 7)
+        self.players = self.create_players(player_amount, card_amount)
         self.first_card = self.choose_first_card()
+        self.player_amount = player_amount
+        self.card_amount = card_amount
+
+    #TEST GAMELOOP SYSTEM
+    #TODO: Improve Upon It
+    def gameloop(self):
+        print(f"Welcome to Uno! There are currently {self.player_amount} players playing with {self.card_amount} cards each!")
+
+        self.last_card_placed = self.first_card
+        print(f"The beginning card is a {self.last_card_placed.color} {self.last_card_placed.type}!")
+
+        print(f"\nIt is now player {self.current_player_turn.id}'s turn! Other player(s), please look away from the screen as player {self.current_player_turn.id} chooses their card.")
+        input("Press enter to view cards... ")
+        os.system('cls' if os.name=='nt' else 'clear')
+
+        self.gameloop_player_choice()
+
 
     def create_all_cards(self):
         #TODO: Unhardcode later
@@ -76,6 +94,8 @@ class Game:
         list_of_all_players = []
         for player_number in range(player_amount):
             list_of_all_players.append(Player(player_number, self.setup_player_cards(cards_per_player)))
+
+        self.current_player_turn = random.choice(list_of_all_players)
         
         return list_of_all_players
 
@@ -86,47 +106,70 @@ class Game:
             player_cards.append(self.total_cards[random.randint(0, len(self.total_cards) - 1)])
 
         return player_cards
-   
+    
+    def gameloop_player_choice(self):
+        print(f"The last card placed is a {self.last_card_placed.color} {self.last_card_placed.type}\n")
+        print("You have the following cards...")
+
+        card_increment = 0
+        for card in self.current_player_turn.cards:
+            card_increment += 1
+            if card.color == "none":
+                print(f"[{card_increment}] {card.type}")
+            else:
+                print(f"[{card_increment}] {card.color} {card.type}")
+        
+        #TODO: Implement Option To Draw Cards If No Cards Match
+        player_choice = input("\nPlease choose the number of the card (found on the left) for the card you would like to place: ")
+
+        try:
+            int(player_choice)
+        except ValueError:
+            print("\nUh oh. Please enter the card id number (found on the left) to place that card.")
+            input("Please press Enter to continue... ")
+
+            player_choice = ""
+            os.system('cls' if os.name=='nt' else 'clear')
+            self.gameloop_player_choice()
+
+        try:
+            card_chosen = self.current_player_turn.cards[int(player_choice) - 1]
+        except IndexError:
+            print("\nUh oh. It doesn't seem like this card is in your list. Please enter the card id number (found on the left) to place that card.")
+            input("Please press Enter to continue... ")
+
+            player_choice = ""
+            os.system('cls' if os.name=='nt' else 'clear')
+            self.gameloop_player_choice()
+        
+        if card_chosen.color != "none":
+            print(f"You have chosen the card {card_chosen.color} {card_chosen.type}")
+        else:
+            print(f"You have chosen the card {card_chosen.type}")
+           
     def choose_first_card(self):
         #TODO: Remove +2, reverse, and skip from normal_cards
         first_card = self.normal_cards[random.randint(0, len(self.normal_cards) - 1)]
 
-        return first_card
+        #TODO: Remove this trash system which uses a whole different list
+        if first_card.type == "reverse" or first_card.type == "+2" or first_card.type == "skip":
+            types = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+            colors = ["red", "yellow", "green", "blue"]
 
+            first_card = Card(random.choice(types), random.choice(colors))
+
+        return first_card
+    
 class Player:
     def __init__(self, id, cards):
         self.id = id
         self.cards = cards
 
-game = Game()
+game = Game(2, 7)
+game.gameloop()
 
-print(game.first_card.type)
-
-for player in game.players:
-    print(player.id)
-    for card in player.cards:
-        print(card.color + ": " + card.type)
-    print("\n")
-
-# for i in game.cards_of_all_players:
-    # for j in i:
-    #     print(j.type)
-    # print("\n\n")
-#Give each player their cards
-player1_cards = []
-player2_cards = []
-
-# for card in range(7):
-#     player1_cards.append(total_cards[random.randint(0, len(total_cards) - 1)])
-
-# for card in range(7):
-#     player2_cards.append(total_cards[random.randint(0, len(total_cards) - 1)])
-
-# #Create and filter First Card
-# first_card = normal_cards[random.randint(0, len(normal_cards) - 1)]
-
-# for p1_card in player1_cards:
-#     print(p1_card.color + ": " + p1_card.type)
-# print("\n\n")
-# for p2_card in player1_cards:
-#     print(p2_card.color + ": " + p2_card.type)
+# for player in game.players:
+#     print(player.id)
+#     for card in player.cards:
+#         print(card.color + ": " + card.type)
+#     print("\n")
