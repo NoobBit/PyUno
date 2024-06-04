@@ -108,40 +108,29 @@ class Game:
         return player_cards
     
     def gameloop_player_choice(self):
-        print(f"The last card placed is a {self.last_card_placed.color} {self.last_card_placed.type}\n")
-        print("You have the following cards...")
+        player_choice = None
+        while player_choice == None or not player_choice.isdigit() or int(player_choice) > len(self.current_player_turn.cards) or int(player_choice) < 1:
+            print(f"The last card placed is a {self.last_card_placed.color} {self.last_card_placed.type}\n")
+            print("You have the following cards...")
 
-        card_increment = 0
-        for card in self.current_player_turn.cards:
-            card_increment += 1
-            if card.color == "none":
-                print(f"[{card_increment}] {card.type}")
+            card_increment = 0
+            for card in self.current_player_turn.cards:
+                card_increment += 1
+                if card.color == "none":
+                    print(f"[{card_increment}] {card.type}")
+                else:
+                    print(f"[{card_increment}] {card.color} {card.type}")
+        
+            #TODO: Implement Option To Draw Cards If No Cards Match
+            player_choice = input("\nPlease choose the number of the card (found on the left) for the card you would like to place: ")
+
+            if player_choice == None or not player_choice.isdigit() or int(player_choice) > len(self.current_player_turn.cards) or int(player_choice) < 1:
+                print("\nUh oh. It doesn't seem like this card is in your list. Please enter the card id number (found on the left) to place that card.")
+                input("Please press Enter to continue... ")
+                os.system('cls' if os.name=='nt' else 'clear')
             else:
-                print(f"[{card_increment}] {card.color} {card.type}")
-        
-        #TODO: Implement Option To Draw Cards If No Cards Match
-        player_choice = input("\nPlease choose the number of the card (found on the left) for the card you would like to place: ")
-
-        try:
-            int(player_choice)
-        except ValueError:
-            print("\nUh oh. Please enter the card id number (found on the left) to place that card.")
-            input("Please press Enter to continue... ")
-
-            player_choice = ""
-            os.system('cls' if os.name=='nt' else 'clear')
-            self.gameloop_player_choice()
-
-        try:
-            card_chosen = self.current_player_turn.cards[int(player_choice) - 1]
-        except IndexError:
-            print("\nUh oh. It doesn't seem like this card is in your list. Please enter the card id number (found on the left) to place that card.")
-            input("Please press Enter to continue... ")
-
-            player_choice = ""
-            os.system('cls' if os.name=='nt' else 'clear')
-            self.gameloop_player_choice()
-        
+                break
+        card_chosen = self.current_player_turn.cards[int(player_choice) - 1]
         if card_chosen.color != "none":
             print(f"You have chosen the card {card_chosen.color} {card_chosen.type}")
         else:
