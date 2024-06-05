@@ -13,6 +13,7 @@ class Game:
         self.first_card = self.choose_first_card()
         self.player_amount = player_amount
         self.card_amount = card_amount
+        self.queue_direction = 1 #1 means forward; -1 means backward
 
     #TEST GAMELOOP SYSTEM
     #TODO: Improve Upon It
@@ -22,11 +23,22 @@ class Game:
         self.last_card_placed = self.first_card
         print(f"The beginning card is a {self.last_card_placed.color} {self.last_card_placed.type}!")
 
-        print(f"\nIt is now player {self.current_player_turn.id + 1}'s turn! Other player(s), please look away from the screen as player {self.current_player_turn.id + 1} chooses their card.")
-        input("Press enter to view cards... ")
-        os.system('cls' if os.name=='nt' else 'clear')
+        while True:
+            print(f"\nIt is now player {self.current_player_turn.id + 1}'s turn! Other player(s), please look away from the screen as player {self.current_player_turn.id + 1} chooses their card.")
+            input("Press enter to view cards... ")
+            os.system('cls' if os.name=='nt' else 'clear')
 
-        self.gameloop_player_choice()
+            self.gameloop_player_choice()
+            if self.queue_direction == 1:
+                if self.current_player_turn.id + 1 == len(self.players):
+                    self.current_player_turn = self.players[0]
+                else:
+                    self.current_player_turn = self.players[self.current_player_turn.id + 1]
+            elif self.queue_direction == -1:
+                if self.current_player_turn.id == 0:
+                    self.current_player_turn = self.players[len(self.players) - 1]
+                else:
+                    self.current_player_turn = self.players[self.current_player_turn.id - 1]
 
     def create_all_cards(self):
         #TODO: Unhardcode later
@@ -112,7 +124,10 @@ class Game:
         player_choice = None
         is_not_acceptable_card = True
         while is_not_acceptable_card:
-            print(f"The last card placed is a {self.last_card_placed.color} {self.last_card_placed.type}\n")
+            if self.last_card_placed.color != "none":
+                print(f"The last card placed is a {self.last_card_placed.color} {self.last_card_placed.type}\n")
+            else:
+                print(f"The last card placed is a {self.last_card_placed.type}\n")
             print("You have the following cards...")
 
             card_increment = 0
@@ -151,11 +166,7 @@ class Game:
                 break
         if is_not_acceptable_card == False:
             card_chosen = self.current_player_turn.cards[int(player_choice) - 1]
-            self.gameloop_play_card(card_chosen)
-            if card_chosen.color != "none":
-                print(f"\nYou have chosen the card {card_chosen.color} {card_chosen.type}")
-            else:
-                print(f"\nYou have chosen the card {card_chosen.type}")
+            self.gameloop_play_card(self.current_player_turn, card_chosen)
     
     def gameloop_draw_card(self, player_to_draw_to):
         drawn_card = random.choice(self.total_cards)
@@ -184,17 +195,19 @@ class Game:
                         input("Please press Enter to continue... ")
                         is_not_acceptable_option = True
                         os.system('cls' if os.name=='nt' else 'clear')
+                        continue
                     else:
+                        is_not_acceptable_option = False
                         self.gameloop_play_card(player_to_draw_to, drawn_card)
                         break
                 else:
+                    is_not_acceptable_option = False
                     self.gameloop_play_card(player_to_draw_to, drawn_card)
                     break
-                break
             elif int(player_choice) == 2:
                 is_not_acceptable_option = False
                 os.system('cls' if os.name=='nt' else 'clear')
-                print(f"Player {player_to_draw_to.id + 1} drew a card and chose to keep it")
+                print(f"Player {player_to_draw_to.id + 1} drew a card and chose to keep it.\n")
                 break
             elif int(player_choice) == 3:
                 is_not_acceptable_option = False
@@ -203,8 +216,16 @@ class Game:
                 break
     
     def gameloop_play_card(self, player, card):
-        #TODO: Implement
-        pass
+        #TODO: Implement Special Cards
+        self.last_card_placed = card
+        os.system('cls' if os.name=='nt' else 'clear')
+
+        if card.color != "none":
+            print(f"Player {player.id + 1} has played a {card.color} {card.type} card.\n")
+        else:
+            print(f"Player {player.id + 1} has played a {card.type} card.\n")
+
+        player.cards.remove(card)
            
     def choose_first_card(self):
         #TODO: Remove +2, reverse, and skip from normal_cards
