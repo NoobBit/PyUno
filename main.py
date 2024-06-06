@@ -2,9 +2,10 @@ import os
 import random
 
 class Card:
-    def __init__(self, type, color):
+    def __init__(self, type, color, modifier):
         self.type = type
         self.color = color
+        self.modifier = modifier
 
 class Game:
     def __init__(self, player_amount, card_amount):
@@ -29,16 +30,7 @@ class Game:
             os.system('cls' if os.name=='nt' else 'clear')
 
             self.gameloop_player_choice()
-            if self.queue_direction == 1:
-                if self.current_player_turn.id + 1 == len(self.players):
-                    self.current_player_turn = self.players[0]
-                else:
-                    self.current_player_turn = self.players[self.current_player_turn.id + 1]
-            elif self.queue_direction == -1:
-                if self.current_player_turn.id == 0:
-                    self.current_player_turn = self.players[len(self.players) - 1]
-                else:
-                    self.current_player_turn = self.players[self.current_player_turn.id - 1]
+            self.current_player_turn = self.determine_next_player_in_queue()
 
     def create_all_cards(self):
         #TODO: Unhardcode later
@@ -59,37 +51,37 @@ class Game:
         for color in colors:
             if color == "red":
                 for ro_card in repeat_once_type:
-                    red_cards.append(Card(ro_card, "red"))
+                    red_cards.append(Card(ro_card, "red", "none"))
                 for rt_card in repeat_twice_types:
-                    red_cards.append(Card(rt_card, "red"))
-                    red_cards.append(Card(rt_card, "red"))
+                    red_cards.append(Card(rt_card, "red", "none"))
+                    red_cards.append(Card(rt_card, "red", "none"))
 
             if color == "yellow":
                 for ro_card in repeat_once_type:
-                    yellow_cards.append(Card(ro_card, "yellow"))
+                    yellow_cards.append(Card(ro_card, "yellow", "none"))
                 for rt_card in repeat_twice_types:
-                    yellow_cards.append(Card(rt_card, "yellow"))
-                    yellow_cards.append(Card(rt_card, "yellow"))
+                    yellow_cards.append(Card(rt_card, "yellow", "none"))
+                    yellow_cards.append(Card(rt_card, "yellow", "none"))
 
             if color == "green":
                 for ro_card in repeat_once_type:
-                    green_cards.append(Card(ro_card, "green"))
+                    green_cards.append(Card(ro_card, "green", "none"))
                 for rt_card in repeat_twice_types:
-                    green_cards.append(Card(rt_card, "green"))
-                    green_cards.append(Card(rt_card, "green"))
+                    green_cards.append(Card(rt_card, "green", "none"))
+                    green_cards.append(Card(rt_card, "green", "none"))
 
             if color == "blue":
                 for ro_card in repeat_once_type:
-                    blue_cards.append(Card(ro_card, "blue"))
+                    blue_cards.append(Card(ro_card, "blue", "none"))
                 for rt_card in repeat_twice_types:
-                    blue_cards.append(Card(rt_card, "blue"))
-                    blue_cards.append(Card(rt_card, "blue"))
+                    blue_cards.append(Card(rt_card, "blue", "none"))
+                    blue_cards.append(Card(rt_card, "blue", "none"))
 
         for rf_card in repeat_four_types:
-            misc_cards.append(Card(rf_card, "none"))
-            misc_cards.append(Card(rf_card, "none"))
-            misc_cards.append(Card(rf_card, "none"))
-            misc_cards.append(Card(rf_card, "none"))
+            misc_cards.append(Card(rf_card, "none", "none"))
+            misc_cards.append(Card(rf_card, "none", "none"))
+            misc_cards.append(Card(rf_card, "none", "none"))
+            misc_cards.append(Card(rf_card, "none", "none"))
 
         #Add all Cards
         normal_cards.extend(red_cards)
@@ -120,14 +112,17 @@ class Game:
 
         return player_cards
     
+    def gameloop_print_last_placed_card(self):
+        if self.last_card_placed.color != "none":
+            print(f"The last card placed is a {self.last_card_placed.color} {self.last_card_placed.type}\n")
+        else:
+            print(f"The last card placed is a {self.last_card_placed.type} card with the color {self.last_card_placed.modifier}\n")
+    
     def gameloop_player_choice(self):
         player_choice = None
         is_not_acceptable_card = True
         while is_not_acceptable_card:
-            if self.last_card_placed.color != "none":
-                print(f"The last card placed is a {self.last_card_placed.color} {self.last_card_placed.type}\n")
-            else:
-                print(f"The last card placed is a {self.last_card_placed.type}\n")
+            self.gameloop_print_last_placed_card()
             print("You have the following cards...")
 
             card_increment = 0
@@ -153,7 +148,7 @@ class Game:
                 is_not_acceptable_card = True
                 os.system('cls' if os.name=='nt' else 'clear')
             elif self.current_player_turn.cards[int(player_choice) - 1].color != "none":
-                if self.current_player_turn.cards[int(player_choice) - 1].type != self.last_card_placed.type and self.current_player_turn.cards[int(player_choice) - 1].color != self.last_card_placed.color:
+                if self.current_player_turn.cards[int(player_choice) - 1].type != self.last_card_placed.type and self.current_player_turn.cards[int(player_choice) - 1].color != self.last_card_placed.color and self.current_player_turn.cards[int(player_choice) - 1].color != self.last_card_placed.modifier:
                     print("\nUh oh. It doesn't seem like this card can be placed. Please choose a card that matches in type, color, or number with the last card placed. If you do not have any cards that meet this requirement, please type in \"DRAW\" to draw a new card.")
                     input("Please press Enter to continue... ")
                     is_not_acceptable_card = True
@@ -175,26 +170,27 @@ class Game:
 
         is_not_acceptable_option = True
         while is_not_acceptable_option:
+            os.system('cls' if os.name=='nt' else 'clear')
             if drawn_card.color == "none":
-                print(f"\nYou have drawn a {drawn_card.type} card")
+                print(f"You have drawn a {drawn_card.type} card\n")
             else:
-                print(f"\nYou have drawn a {drawn_card.color} {drawn_card.type} card")
+                print(f"You have drawn a {drawn_card.color} {drawn_card.type} card\n")
+            
+            self.gameloop_print_last_placed_card()
         
-            print("\nWould you like to...\n[1] Play the card\n[2] Save it and end turn\n[3] Save it and go back to all cards.")
+            print("Would you like to...\n[1] Play the card\n[2] Save it and end turn\n[3] Save it and go back to all cards.")
             player_choice = input()
 
             if not player_choice.isdigit() or (int(player_choice) != 1 and int(player_choice) != 2 and int(player_choice) != 3):
                 print("\nUh oh. Invalid Option. Please choose 1, to play the card, 2, to save it and end your turn, or 3, to save it and return to all your cards.")
                 input("Please press Enter to continue... ")
                 is_not_acceptable_option = True
-                os.system('cls' if os.name=='nt' else 'clear')
             elif int(player_choice) == 1:
                 if drawn_card.color != "none":
-                    if drawn_card.type != self.last_card_placed.type and drawn_card.color != self.last_card_placed.color:
+                    if drawn_card.type != self.last_card_placed.type and drawn_card.color != self.last_card_placed.color and drawn_card.color != self.last_card_placed.modifier:
                         print("\nUh oh. It doesn't seem like this card can be placed. Please choose either 2, to save it and end your turn, or 3, to save it and return to all your cards.")
                         input("Please press Enter to continue... ")
                         is_not_acceptable_option = True
-                        os.system('cls' if os.name=='nt' else 'clear')
                         continue
                     else:
                         is_not_acceptable_option = False
@@ -217,15 +213,83 @@ class Game:
     
     def gameloop_play_card(self, player, card):
         #TODO: Implement Special Cards
+
+        #Wild and +4 Cards
+        if card.type == "wild" or card.type == "+4":
+            is_not_acceptable_option = True
+            while is_not_acceptable_option:
+                os.system('cls' if os.name=='nt' else 'clear')
+                print(f"You have chosen to place down a {card.type} card.\n")
+                self.gameloop_print_last_placed_card()
+                print("Here are the following colors you can switch to...\n[1] Red\n[2] Yellow\n[3] Green\n[4] Blue")
+                player_choice = input()
+                if not player_choice.isdigit() or (int(player_choice) != 1 and int(player_choice) != 2 and int(player_choice) != 3 and int(player_choice) != 4):
+                    print("\nUh oh. Invalid Option. Please choose 1 for red, 2 for yellow, 3 for green, or 4 for blue.")
+                    input("Please press Enter to continue... ")
+                    is_not_acceptable_option = True
+                #TODO: Implement 4+ AND Implement Proper Last Wild Card Detection
+                elif int(player_choice) == 1:
+                    if card.type == "+4":
+                        self.gameloop_play_four_plus_card(card, "red", player)
+                    else:
+                        self.gameloop_play_wild_card(card, "red", player) 
+                    return
+                elif int(player_choice) == 2:
+                    if card.type == "+4":
+                        self.gameloop_play_four_plus_card(card, "yellow", player)
+                    else:
+                        self.gameloop_play_wild_card(card, "yellow", player) 
+                    return
+                elif int(player_choice) == 3:
+                    if card.type == "+4":
+                        self.gameloop_play_four_plus_card(card, "green", player)
+                    else:
+                        self.gameloop_play_wild_card(card, "green", player) 
+                    return
+                elif int(player_choice) == 4:
+                    if card.type == "+4":
+                        self.gameloop_play_four_plus_card(card, "blue", player)
+                    else:
+                        self.gameloop_play_wild_card(card, "blue", player) 
+                    return
+        #"reverse", "skip", "+2", 
+        elif card.type == "+2":
+            pass
+
         self.last_card_placed = card
         os.system('cls' if os.name=='nt' else 'clear')
-
+        
         if card.color != "none":
             print(f"Player {player.id + 1} has played a {card.color} {card.type} card.\n")
         else:
             print(f"Player {player.id + 1} has played a {card.type} card.\n")
 
         player.cards.remove(card)
+    
+    def gameloop_play_wild_card(self, card, color, player):
+        card.modifier = color
+        self.last_card_placed = card
+
+        os.system('cls' if os.name=='nt' else 'clear')
+        print(f"Player {player.id + 1} has placed a {card.type} card with the color {card.modifier}\n")
+        player.cards.remove(card)
+    
+    def gameloop_play_four_plus_card(self, card, color, player):
+        card.modifier = color
+        self.last_card_placed = card
+        next_player = self.determine_next_player_in_queue()
+
+        os.system('cls' if os.name=='nt' else 'clear')
+        print(f"Player {player.id + 1} has placed a {card.type} card on Player {next_player.id + 1} with the color {card.modifier}\n")
+                        
+        self.gameloop_draw_x_cards(4, next_player)
+        player.cards.remove(card)
+    
+    def gameloop_draw_x_cards(self, card_number, player_to_draw_to):
+        for i in range(card_number):
+            drawn_card = random.choice(self.total_cards)
+            player_to_draw_to.cards.append(drawn_card)
+            self.total_cards.remove(drawn_card)
            
     def choose_first_card(self):
         #TODO: Remove +2, reverse, and skip from normal_cards
@@ -236,9 +300,21 @@ class Game:
             types = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
             colors = ["red", "yellow", "green", "blue"]
 
-            first_card = Card(random.choice(types), random.choice(colors))
+            first_card = Card(random.choice(types), random.choice(colors), "none")
 
         return first_card
+
+    def determine_next_player_in_queue(self):
+        if self.queue_direction == 1:
+            if self.current_player_turn.id + 1 == len(self.players):
+                return self.players[0]
+            else:
+                return self.players[self.current_player_turn.id + 1]
+        elif self.queue_direction == -1:
+            if self.current_player_turn.id == 0:
+                return self.players[len(self.players) - 1]
+            else:
+                return self.players[self.current_player_turn.id - 1]
     
 class Player:
     def __init__(self, id, cards):
