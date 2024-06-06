@@ -309,7 +309,7 @@ class Game:
         next_player = self.determine_next_player_in_queue(self.current_player_turn)
 
         os.system('cls' if os.name=='nt' else 'clear')
-        print(f"Player {player.id + 1} has placed a {card.type} card on Player {next_player.id + 1} with the color {card.modifier}\n")
+        print(f"Player {player.id + 1} has placed a {card.type} card on player {next_player.id + 1} with the color {card.modifier}\n")
                         
         self.gameloop_draw_x_cards(4, next_player)
         player.cards.remove(card)
@@ -319,7 +319,7 @@ class Game:
         next_player = self.determine_next_player_in_queue(self.current_player_turn)
 
         os.system('cls' if os.name=='nt' else 'clear')
-        print(f"Player {player.id + 1} has placed a {card.color} {card.type} card on Player {next_player.id + 1}\n")
+        print(f"Player {player.id + 1} has placed a {card.color} {card.type} card on player {next_player.id + 1}\n")
                         
         self.gameloop_draw_x_cards(2, next_player)
         player.cards.remove(card)
@@ -360,5 +360,5 @@ class Player:
         self.id = id
         self.cards = cards
 
-game = Game(3, 7)
+game = Game(2, 7)
 game.gameloop()
