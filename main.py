@@ -30,7 +30,9 @@ class Game:
             os.system('cls' if os.name=='nt' else 'clear')
 
             self.gameloop_player_choice()
-            self.current_player_turn = self.determine_next_player_in_queue()
+
+            if self.last_card_placed.type != "skip":
+                self.current_player_turn = self.determine_next_player_in_queue(self.current_player_turn)
 
     def create_all_cards(self):
         #TODO: Unhardcode later
@@ -139,7 +141,8 @@ class Game:
             if player_choice.lower() == "draw":
                 self.gameloop_draw_card(self.current_player_turn)
                 break
-            elif player_choice.lower() == "exit" or player_choice.lower() == "quit":
+            #TODO: Remove This Debug Command Later
+            elif player_choice.lower() == "exit":
                 exit(0)
 
             if not player_choice.isdigit() or int(player_choice) > len(self.current_player_turn.cards) or int(player_choice) < 1:
@@ -252,9 +255,35 @@ class Game:
                     else:
                         self.gameloop_play_wild_card(card, "blue", player) 
                     return
-        #"reverse", "skip", "+2", 
+        #2+ Card
         elif card.type == "+2":
-            pass
+            self.gameloop_play_two_plus_card(card, player)
+            return
+        #Reverse
+        elif card.type == "reverse":
+            self.last_card_placed = card
+
+            self.queue_direction *= -1 #Changes 1 -> -1 and -1 -> 1
+            next_player = self.determine_next_player_in_queue(self.current_player_turn)
+
+            os.system('cls' if os.name=='nt' else 'clear')
+            print(f"Player {player.id + 1} has placed a {card.color} {card.type} card and has changed the direction of the game to player {next_player.id + 1}\n")
+                        
+            player.cards.remove(card)
+            return
+        #Skip
+        elif card.type == "skip":
+            self.last_card_placed = card
+
+            skipped_over_player = self.determine_next_player_in_queue(self.current_player_turn)
+            real_next_player = self.determine_next_player_in_queue(skipped_over_player)
+            self.current_player_turn = real_next_player
+
+            os.system('cls' if os.name=='nt' else 'clear')
+            print(f"Player {player.id + 1} has placed a {card.color} {card.type} card and skipped player {skipped_over_player.id + 1}'s turn.\n")
+                        
+            player.cards.remove(card)
+            return
 
         self.last_card_placed = card
         os.system('cls' if os.name=='nt' else 'clear')
@@ -277,12 +306,22 @@ class Game:
     def gameloop_play_four_plus_card(self, card, color, player):
         card.modifier = color
         self.last_card_placed = card
-        next_player = self.determine_next_player_in_queue()
+        next_player = self.determine_next_player_in_queue(self.current_player_turn)
 
         os.system('cls' if os.name=='nt' else 'clear')
         print(f"Player {player.id + 1} has placed a {card.type} card on Player {next_player.id + 1} with the color {card.modifier}\n")
                         
         self.gameloop_draw_x_cards(4, next_player)
+        player.cards.remove(card)
+
+    def gameloop_play_two_plus_card(self, card, player):
+        self.last_card_placed = card
+        next_player = self.determine_next_player_in_queue(self.current_player_turn)
+
+        os.system('cls' if os.name=='nt' else 'clear')
+        print(f"Player {player.id + 1} has placed a {card.color} {card.type} card on Player {next_player.id + 1}\n")
+                        
+        self.gameloop_draw_x_cards(2, next_player)
         player.cards.remove(card)
     
     def gameloop_draw_x_cards(self, card_number, player_to_draw_to):
@@ -304,22 +343,22 @@ class Game:
 
         return first_card
 
-    def determine_next_player_in_queue(self):
+    def determine_next_player_in_queue(self, current_player):
         if self.queue_direction == 1:
-            if self.current_player_turn.id + 1 == len(self.players):
+            if current_player.id + 1 == len(self.players):
                 return self.players[0]
             else:
-                return self.players[self.current_player_turn.id + 1]
+                return self.players[current_player.id + 1]
         elif self.queue_direction == -1:
-            if self.current_player_turn.id == 0:
+            if current_player.id == 0:
                 return self.players[len(self.players) - 1]
             else:
-                return self.players[self.current_player_turn.id - 1]
+                return self.players[current_player.id - 1]
     
 class Player:
     def __init__(self, id, cards):
         self.id = id
         self.cards = cards
 
-game = Game(2, 7)
+game = Game(3, 7)
 game.gameloop()
