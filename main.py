@@ -1,5 +1,7 @@
 import os
 import random
+import threading
+import time
 
 class Card:
     def __init__(self, type, color, modifier):
@@ -7,14 +9,24 @@ class Card:
         self.color = color
         self.modifier = modifier
 
+class Player:
+    def __init__(self, id, cards):
+        self.id = id
+        self.cards = cards
+
 class Game:
-    def __init__(self, player_amount, card_amount):
+    def __init__(self, player_amount, card_amount, uno_time):
+        self.player_amount = player_amount
+        self.card_amount = card_amount
+        self.uno_time = uno_time
+
         self.total_cards, self.normal_cards = self.create_all_cards()
         self.players = self.create_players(player_amount, card_amount)
         self.first_card = self.choose_first_card()
-        self.player_amount = player_amount
-        self.card_amount = card_amount
         self.queue_direction = 1 #1 means forward; -1 means backward
+
+        self.uno_continue_running = False
+        self.uno_successfully_called = False
 
     #TEST GAMELOOP SYSTEM
     #TODO: Improve Upon It
@@ -236,29 +248,33 @@ class Game:
                         self.gameloop_play_four_plus_card(card, "red", player)
                     else:
                         self.gameloop_play_wild_card(card, "red", player) 
-                    return
+                    is_not_acceptable_option = False
+                    self.gameloop_check_uno_status(player)
                 elif int(player_choice) == 2:
                     if card.type == "+4":
                         self.gameloop_play_four_plus_card(card, "yellow", player)
                     else:
                         self.gameloop_play_wild_card(card, "yellow", player) 
-                    return
+                    is_not_acceptable_option = False
+                    self.gameloop_check_uno_status(player)
                 elif int(player_choice) == 3:
                     if card.type == "+4":
                         self.gameloop_play_four_plus_card(card, "green", player)
                     else:
                         self.gameloop_play_wild_card(card, "green", player) 
-                    return
+                    is_not_acceptable_option = False
+                    self.gameloop_check_uno_status(player)
                 elif int(player_choice) == 4:
                     if card.type == "+4":
                         self.gameloop_play_four_plus_card(card, "blue", player)
                     else:
                         self.gameloop_play_wild_card(card, "blue", player) 
-                    return
+                    is_not_acceptable_option = False
+                    self.gameloop_check_uno_status(player)
         #2+ Card
         elif card.type == "+2":
             self.gameloop_play_two_plus_card(card, player)
-            return
+            self.gameloop_check_uno_status(player)
         #Reverse
         elif card.type == "reverse":
             self.last_card_placed = card
@@ -270,7 +286,7 @@ class Game:
             print(f"Player {player.id + 1} has placed a {card.color} {card.type} card and has changed the direction of the game to player {next_player.id + 1}\n")
                         
             player.cards.remove(card)
-            return
+            self.gameloop_check_uno_status(player)
         #Skip
         elif card.type == "skip":
             self.last_card_placed = card
@@ -283,17 +299,19 @@ class Game:
             print(f"Player {player.id + 1} has placed a {card.color} {card.type} card and skipped player {skipped_over_player.id + 1}'s turn.\n")
                         
             player.cards.remove(card)
-            return
-
-        self.last_card_placed = card
-        os.system('cls' if os.name=='nt' else 'clear')
-        
-        if card.color != "none":
-            print(f"Player {player.id + 1} has played a {card.color} {card.type} card.\n")
+            self.gameloop_check_uno_status(player)
+        #Normal Cards
         else:
-            print(f"Player {player.id + 1} has played a {card.type} card.\n")
+            self.last_card_placed = card
+            os.system('cls' if os.name=='nt' else 'clear')
+        
+            if card.color != "none":
+                print(f"Player {player.id + 1} has played a {card.color} {card.type} card.\n")
+            else:
+                print(f"Player {player.id + 1} has played a {card.type} card.\n")
 
-        player.cards.remove(card)
+            player.cards.remove(card)
+            self.gameloop_check_uno_status(player)
     
     def gameloop_play_wild_card(self, card, color, player):
         card.modifier = color
@@ -329,7 +347,50 @@ class Game:
             drawn_card = random.choice(self.total_cards)
             player_to_draw_to.cards.append(drawn_card)
             self.total_cards.remove(drawn_card)
-           
+    
+    def gameloop_activate_uno_message(self, time_left, player):
+        while self.uno_continue_running:
+            if not time_left <= 0:
+                os.system('cls' if os.name=='nt' else 'clear')
+                
+                message = f"""╔═════════════════════════════╗
+║ PRESS ENTER TO DECLARE UNO! ║
+║                             ║
+║ YOU HAVE {time_left}s REMAINING !!!!! ║
+╚═════════════════════════════╝
+"""
+                print(message)
+
+                time.sleep(1)
+                time_left -= 1
+            else:
+                self.uno_continue_running = False
+                self.gameloop_draw_x_cards(2, player)
+
+                os.system('cls' if os.name=='nt' else 'clear')
+                print("You have failed to declare an UNO, and therefore, you now have recieved two new cards. Next time, make sure to press \"Enter\" before the time runs out. Press \"Enter\" to end your turn.")
+                self.uno_successfully_called = False
+
+    def gameloop_check_uno_status(self, player):
+        if len(player.cards) == 1:
+            self.uno_continue_running = True
+            self.uno_successfully_called = True
+
+            uno_thread = threading.Thread(target=self.gameloop_activate_uno_message, args=(self.uno_time, player,))
+            uno_thread.start()
+            uno_thread = input()
+
+            if uno_thread != None:
+                self.uno_continue_running = False
+            
+            if self.uno_successfully_called:
+                self.uno_successfully_called = False
+                os.system('cls' if os.name=='nt' else 'clear')
+                print("Congratulations! You successfully declared an UNO. You now have one card remaining... Press \"Enter\" to end your turn.")
+                input()
+            
+            os.system('cls' if os.name=='nt' else 'clear')
+
     def choose_first_card(self):
         #TODO: Remove +2, reverse, and skip from normal_cards
         first_card = self.normal_cards[random.randint(0, len(self.normal_cards) - 1)]
@@ -354,11 +415,7 @@ class Game:
                 return self.players[len(self.players) - 1]
             else:
                 return self.players[current_player.id - 1]
-    
-class Player:
-    def __init__(self, id, cards):
-        self.id = id
-        self.cards = cards
 
-game = Game(2, 7)
+
+game = Game(2, 7, 3)
 game.gameloop()
