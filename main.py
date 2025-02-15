@@ -2,6 +2,12 @@ import os
 import random
 import threading
 import time
+import json
+
+# TODO: Split into Multiple Files
+# TODO: Implement Card Stacking (Also With JSON Settings)
+# TODO: Enable Colored Text (Also With JSON Settings)
+# TODO: Enable/Disable Reverse Card Turning Into Skip Card with Only 2 Players (Also With JSON Settings)
 
 class Card:
     def __init__(self, type, color, modifier):
@@ -15,10 +21,11 @@ class Player:
         self.cards = cards
 
 class Game:
-    def __init__(self, player_amount, card_amount, uno_time):
+    def __init__(self, player_amount, card_amount, uno_time, settings):
         self.player_amount = player_amount
         self.card_amount = card_amount
         self.uno_time = uno_time
+        self.settings = settings
 
         self.total_cards, self.normal_cards = self.create_all_cards()
         self.players = self.create_players(player_amount, card_amount)
@@ -32,7 +39,9 @@ class Game:
     #TEST GAMELOOP SYSTEM
     #TODO: Improve Upon It
     def gameloop(self):
-        intro_ascii_art = """
+        self.clear_screen()
+
+        intro_ascii_art = r"""
  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _ 
 |_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|
 |_|                                          |_|
@@ -47,9 +56,13 @@ class Game:
 |_|             \/__/                        |_|
 |_| _  _  _  _  _  _  _  _  _  _  _  _  _  _ |_|
 |_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|
-
 """
-        print(intro_ascii_art)
+        if self.settings.get("show_ascii_art") == True:
+            print(intro_ascii_art)
+        else:
+            print("PyUno")
+
+        print("Created By: NoobBit\n")
         print(f"There are currently {self.player_amount} players playing with {self.card_amount} cards each!")
 
         self.last_card_placed = self.first_card
@@ -175,8 +188,8 @@ class Game:
             if player_choice.lower() == "draw":
                 self.gameloop_draw_card(self.current_player_turn)
                 break
-            #TODO: Remove This Debug Command Later
-            elif player_choice.lower() == "exit":
+
+            elif player_choice.lower() == "exit" and self.settings.get("allow_debug_commands"):
                 exit(0)
 
             if not player_choice.isdigit() or int(player_choice) > len(self.current_player_turn.cards) or int(player_choice) < 1:
@@ -367,13 +380,18 @@ class Game:
             if not time_left <= 0:
                 self.clear_screen()
                 
-                message = f"""╔═════════════════════════════╗
+                ascii_message = f"""╔═════════════════════════════╗
 ║ PRESS ENTER TO DECLARE UNO! ║
 ║                             ║
-║ YOU HAVE {time_left}s REMAINING !!!!! ║
+║ YOU HAVE {time_left}s REMAINING !!!! ║
 ╚═════════════════════════════╝
 """
-                print(message)
+                normal_message = f"PRESS ENTER TO DECLARE UNO! YOU HAVE {time_left}s REMAINING !!!!"
+
+                if self.settings.get("show_ascii_art") == True:
+                    print(ascii_message)
+                else:
+                    print(normal_message)
 
                 time.sleep(1)
                 time_left -= 1
@@ -442,7 +460,8 @@ class Game:
             
     def end_game(self, victor):
         self.isGameRunning = False
-        print("""
+
+        victory_ascii_art = r"""
  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _ 
 |_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|
 |_|                                                         |_|
@@ -457,7 +476,11 @@ class Game:
 |_|                                               \/__/     |_|
 |_| _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _ |_|
 |_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|
-""")
+"""
+        if self.settings.get("show_ascii_art") == True:
+            print(victory_ascii_art)
+        else:
+            print("Victory!")
         print(f"Congratulations, Player {victor.id + 1}! You have won the game by successfully playing all your cards!\n")
         
         list_of_losers = self.players.copy()
@@ -472,6 +495,24 @@ class Game:
         print()
         exit(0)
 
+# TODO: Add More Settings
+def extract_json_settings(settings_filename):
+    with open(settings_filename, "r") as file:
+        settings_content = json.load(file)
+        return settings_content
+
+def fix_missing_json_settings(settings_content):
+    if settings_content.get("player_amount") == None: settings_content.update({"player_amount": 2})
+    if settings_content.get("card_amount") == None: settings_content.update({"card_amount": 7})
+    if settings_content.get("uno_time") == None: settings_content.update({"uno_time": 3})
+    if settings_content.get("show_ascii_art") == None: settings_content.update({"show_ascii_art": True})
+    if settings_content.get("allow_debug_commands") == None: settings_content.update({"allow_debug_commands": False})
+
+    return settings_content
+
 if __name__ == "__main__":
-    game = Game(2, 7, 3)
+    settings_content = extract_json_settings("game_settings.json")
+    settings_content = fix_missing_json_settings(settings_content)
+
+    game = Game(settings_content.get("player_amount"), settings_content.get("card_amount"), settings_content.get("uno_time"), settings_content)
     game.gameloop()
