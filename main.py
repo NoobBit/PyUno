@@ -25,18 +25,37 @@ class Game:
         self.first_card = self.choose_first_card()
         self.queue_direction = 1 #1 means forward; -1 means backward
 
+        self.isGameRunning = True
         self.uno_continue_running = False
         self.uno_successfully_called = False
 
     #TEST GAMELOOP SYSTEM
     #TODO: Improve Upon It
     def gameloop(self):
-        print(f"Welcome to Uno! There are currently {self.player_amount} players playing with {self.card_amount} cards each!")
+        intro_ascii_art = """
+ _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _ 
+|_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|
+|_|                                          |_|
+|_| ____          __  __                     |_|
+|_|/\  _`\       /\ \/\ \                    |_|
+|_|\ \ \L\ \__  _\ \ \ \ \    ___     ___    |_|
+|_| \ \ ,__/\ \/\ \ \ \ \ \ /' _ `\  / __`\  |_|
+|_|  \ \ \/\ \ \_\ \ \ \_\ \/\ \/\ \/\ \L\ \ |_|
+|_|   \ \_\ \/`____ \ \_____\ \_\ \_\ \____/ |_|
+|_|    \/_/  `/___/> \/_____/\/_/\/_/\/___/  |_|
+|_|             /\___/                       |_|
+|_|             \/__/                        |_|
+|_| _  _  _  _  _  _  _  _  _  _  _  _  _  _ |_|
+|_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|
+
+"""
+        print(intro_ascii_art)
+        print(f"There are currently {self.player_amount} players playing with {self.card_amount} cards each!")
 
         self.last_card_placed = self.first_card
         print(f"The beginning card is a {self.last_card_placed.color} {self.last_card_placed.type}!\n")
 
-        while True:
+        while self.isGameRunning:
             print(f"It is now player {self.current_player_turn.id + 1}'s turn! Other player(s), please look away from the screen as player {self.current_player_turn.id + 1} chooses their card.")
             input("Press Enter to view cards... ")
             self.clear_screen()
@@ -280,7 +299,7 @@ class Game:
             next_player = self.determine_next_player_in_queue(self.current_player_turn)
 
             player.cards.remove(card)
-            self.gameloop_check_uno_status(player)
+            self.gameloop_check_card_numbers(player)
 
             print(f"Player {player.id + 1} has placed a {card.color} {card.type} card and has changed the direction of the game to player {next_player.id + 1}\n")
         #Skip
@@ -292,7 +311,7 @@ class Game:
             self.current_player_turn = real_next_player
 
             player.cards.remove(card)
-            self.gameloop_check_uno_status(player)
+            self.gameloop_check_card_numbers(player)
 
             print(f"Player {player.id + 1} has placed a {card.color} {card.type} card and skipped player {skipped_over_player.id + 1}'s turn.\n")               
         #Normal Cards
@@ -300,7 +319,7 @@ class Game:
             self.last_card_placed = card
 
             player.cards.remove(card)
-            self.gameloop_check_uno_status(player)
+            self.gameloop_check_card_numbers(player)
 
             if card.color != "none":
                 print(f"Player {player.id + 1} has played a {card.color} {card.type} card.\n")
@@ -312,7 +331,7 @@ class Game:
         self.last_card_placed = card
 
         player.cards.remove(card)
-        self.gameloop_check_uno_status(player)
+        self.gameloop_check_card_numbers(player)
 
         print(f"Player {player.id + 1} has placed a {card.type} card with the color {card.modifier}\n")
     
@@ -323,7 +342,7 @@ class Game:
 
         self.gameloop_draw_x_cards(4, next_player)
         player.cards.remove(card)
-        self.gameloop_check_uno_status(player)
+        self.gameloop_check_card_numbers(player)
 
         print(f"Player {player.id + 1} has placed a {card.type} card on player {next_player.id + 1} with the color {card.modifier}\n")
 
@@ -333,7 +352,7 @@ class Game:
         
         self.gameloop_draw_x_cards(2, next_player)
         player.cards.remove(card)
-        self.gameloop_check_uno_status(player)
+        self.gameloop_check_card_numbers(player)
 
         print(f"Player {player.id + 1} has placed a {card.color} {card.type} card on player {next_player.id + 1}\n")
                         
@@ -366,7 +385,7 @@ class Game:
                 print("You have failed to declare an UNO, and therefore, you now have recieved two new cards. Next time, make sure to press \"Enter\" before the time runs out. Press Enter to end your turn.")
                 self.uno_successfully_called = False
 
-    def gameloop_check_uno_status(self, player):
+    def gameloop_check_card_numbers(self, player):
         if len(player.cards) == 1:
             self.uno_continue_running = True
             self.uno_successfully_called = True
@@ -389,6 +408,9 @@ class Game:
             else:
                 self.clear_screen()
                 print(f"Player {player.id + 1} has failed to declare an UNO. As a resulty, they recieved two additional cards.")
+        elif len(player.cards) == 0:
+            self.clear_screen()
+            self.end_game(player)
         else:
             self.clear_screen()
             print(f"Player {player.id + 1} now has {len(player.cards)} cards remaining...")
@@ -417,7 +439,39 @@ class Game:
                 return self.players[len(self.players) - 1]
             else:
                 return self.players[current_player.id - 1]
+            
+    def end_game(self, victor):
+        self.isGameRunning = False
+        print("""
+ _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _ 
+|_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|
+|_|                                                         |_|
+|_| __  __              __                          __      |_|
+|_|/\ \/\ \  __        /\ \__                      /\ \     |_|
+|_|\ \ \ \ \/\_\    ___\ \ ,_\   ___   _ __   __  _\ \ \    |_|
+|_| \ \ \ \ \/\ \  /'___\ \ \/  / __`\/\`'__\/\ \/\ \ \ \   |_|
+|_|  \ \ \_/ \ \ \/\ \__/\ \ \_/\ \L\ \ \ \/ \ \ \_\ \ \_\  |_|
+|_|   \ `\___/\ \_\ \____\\ \__\ \____/\ \_\  \/`____ \/\_\ |_|
+|_|    `\/__/  \/_/\/____/ \/__/\/___/  \/_/   `/___/> \/_/ |_|
+|_|                                               /\___/    |_|
+|_|                                               \/__/     |_|
+|_| _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _ |_|
+|_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|
+""")
+        print(f"Congratulations, Player {victor.id + 1}! You have won the game by successfully playing all your cards!\n")
+        
+        list_of_losers = self.players.copy()
+        list_of_losers.remove(victor)
+
+        if len(list_of_losers) != 1:
+            print("The following list contains how close the other players were to winning...\n")
+            for loser in list_of_losers:
+                print(f"Player {loser.id + 1}: {len(loser.cards)} card(s) remaining.")
+        else:
+            print(f"Player {list_of_losers[0].id + 1} was close to victory having {len(list_of_losers[0].cards)} card(s) in the end!")
+        print()
+        exit(0)
 
 if __name__ == "__main__":
-    game = Game(2, 7, 5)
+    game = Game(2, 7, 3)
     game.gameloop()
