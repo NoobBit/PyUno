@@ -3,5 +3,5 @@
     "card_amount": 7,
     "uno_time": 3,
     "show_ascii_art": true,
-    "allow_debug_commands": true
+    "allow_debug_commands": false
 }

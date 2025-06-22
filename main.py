@@ -262,8 +262,6 @@ class Game:
                 break
     
     def gameloop_play_card(self, player, card):
-        #TODO: Implement Special Cards
-
         #Wild and +4 Cards
         if card.type == "wild" or card.type == "+4":
             is_not_acceptable_option = True
